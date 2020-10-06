@@ -6,186 +6,264 @@ const numberUp = document.getElementById("number-up");
 const numberDown = document.getElementById("number-down");
 
 const nameTodo = document.querySelector(".todo");
-const nameComleted = document.querySelector(".comleted");
+const nameCompleted = document.querySelector(".completed");
 const currentTasks = document.getElementById("currentTasks");
 const completedTasks = document.getElementById("completedTasks");
-const countCompletedTasks = completedTasks.getElementsByTagName("li");
-const countCurrentTasks = currentTasks.getElementsByTagName("li");
 const fieldset = document.querySelector("fieldset");
 const inputRadio = fieldset.querySelectorAll("input");
 
 const taskTemplate = document.querySelector("#task-template").content;
 const newItemTemplate = taskTemplate.querySelector(".list-group-item");
 
-// let countTitle = document.createElement("span");
-// let addCount = function(List, ListCollection){
-//     const count = countTitle.cloneNode(true);
-//     List.append(count);
-//     count.textContent = ListCollection.length > 0 ? ` (${ListCollection.length})` : ""; 
-//     console.log(ListCollection.length);
-// }
+const exampleModal = document.querySelector(".modal");
 
+const TODO = "ToDo";
+const COMPLETED = "Completed";
+const DOWN = "SORT_DOWN";
+const UP = "SORT_UP";
 
-const TodoList = {
-    ToDo: [
-        {
-            title: "hello", 
-            text: "hey", 
-            priority: "Low", 
-            date: new Date(), 
-            comleted: false
-        },
-        {
-            title: "New", 
-            text: "hey", 
-            priority: "Middle",
-            date: new Date(2020, 8, 12, 14, 12),  
-            comleted: false
-        }
-    ],
-    Comleted: [
-        {
-            title: "Read", 
-            text: "Read book about JS", 
-            priority: "Middle",
-            date: new Date(2020, 8, 12, 19, 12),  
-            comleted: false
-        },
-        {
-            title: "Walk", 
-            text: "Walk on the park", 
-            priority: "Middle",
-            date: new Date(2020, 8, 14, 10, 30),  
-            comleted: false
-        },
-        {
-            title: "Car", 
-            text: "Fix a car", 
-            priority: "Low",
-            date: new Date(2020, 8, 10, 12, 30),  
-            comleted: false
-        }
-        
-    ]
+let TodoList = {ToDo: [], Completed: []}
+
+let countTasks = document.createElement("span");
+
+let addCount = function(List){
+    const count = countTasks.cloneNode(true);
+    List.append(count);
+}
+addCount(nameTodo);
+addCount(nameCompleted);
+
+function closeModal(modal){
+    modal.classList.remove("mod");
+    modal.style.display = "none";
+    modal.areaModal = "false";
 }
 
-const setLocalStorage =  function(TodoList) {
-    localStorage.setItem("TodoList", JSON.stringify(TodoList));
-    console.log(JSON.stringify(TodoList));
+const setLocalStorage = function (key, value) {
+    localStorage.setItem(`${key}`, JSON.stringify(value));
 }
 
-const getLocalStorage = function() {
+const getLocalStorage = function () {
     let todolistLocalStorage = localStorage.getItem("TodoList")
-    if(todolistLocalStorage) {
+    if (todolistLocalStorage) {
         return JSON.parse(todolistLocalStorage);
     }
-    return null;
-    
+    return todolistLocalStorage
 }
 
-let getStorage =  getLocalStorage() ? getLocalStorage().ToDo : null;
-
+let getStorageToDo = getLocalStorage() ? getLocalStorage(): null;
+let getStorageCompleted = getLocalStorage() ? getLocalStorage() : null
 
 function createTime(date) {
     function times(time) {
         return time < 10 ? `0${time}` : time;
     }
-    let time = `${times(date.getHours())}:${times(date.getMinutes())}`;
+
+    let time = `${times(date.getHours())}:${times(date.getMinutes())}:${times(date.getSeconds())}`;
     let dates = `${times(date.getDate())}.${times(date.getMonth() + 1)}.${date.getFullYear()}`;
-    return `${time} ${dates}`       
+    return `${time} ${dates}`
 }
 
-function renderTask(TodoList, ListCollection) {
-    TodoList.map(function(task){
-    
+let deleteTask = function (id, TodoList, ListCollection, nameList) {
+    const tasks = {
+        ...getLocalStorage(),
+        [nameList]: TodoList[nameList].filter(task => task.id !== id)
+    };
+    setLocalStorage("TodoList", tasks);
+    renderTask(getLocalStorage(), ListCollection, nameList);
+}
+
+let completeTask = function (id, task, todoList, ListCollection, nameList) {
+    TodoList = getLocalStorage();
+    TodoList.Completed = [...TodoList.Completed, task];
+    setLocalStorage("TodoList", TodoList);
+    deleteTask(id, todoList, ListCollection, nameList);
+    renderTask(getLocalStorage(), completedTasks, COMPLETED);
+}
+
+let editTask = function (id, task, TodoList, ListCollection, nameList){
+
+    const modalContent = exampleModal.querySelector(".modal-content");
+    const modal = modalContent.cloneNode(true);
+    modal.classList.remove("modal-content");
+    modal.classList.add("mod");
+    const editTaskBtn = modal.querySelector("button[type=submit]");
+    const inputTitle = modal.querySelector("#inputTitle");
+    const inputText = modal.querySelector("#inputText");
+    const fieldset = modal.querySelector("fieldset");
+    const inputRadio = fieldset.querySelectorAll("input");
+
+    for(let input of inputRadio){
+        input.value === task.priority ?  input.checked = true : input.checked = false;
+    }
+
+    inputTitle.value = task.title;
+    inputText.value = task.text;
+    editTaskBtn.textContent = "Edit task";
+    document.body.append(modal);
+
+    const closeBtn = modal.querySelector(".close");
+    const secondaryBtn = modal.querySelector(".btn-secondary");
+    closeBtn.addEventListener("click", () => closeModal(modal));
+    secondaryBtn.addEventListener("click", () => closeModal(modal));
+
+    document.addEventListener('keydown', function(event) {
+        if (event.code === 'Escape') {
+            closeModal(modal);
+        }
+    });
+
+    editTaskBtn.addEventListener("click", function (e){
+        e.preventDefault();
+        let priority = 0;
+        for(let input of inputRadio){
+            input.checked ? priority = input.value : priority;
+        }
+
+        task.title = inputTitle.value;
+        task.text = inputText.value;
+        task.priority = priority;
+
+        const tasks = {
+            ...getLocalStorage(),
+            [nameList]: TodoList[nameList].map(t => {
+                if(t.id === id){
+                    return {...t, ...task}
+                } else return t
+            })
+        }
+        setLocalStorage("TodoList", tasks);
+        renderTask(getLocalStorage(), ListCollection, nameList);
+        closeModal(modal);
+    })
+}
+
+function renderTask(TodoList, ListCollection, nameList) {
+    ListCollection.innerHTML = "";
+    TodoList[nameList].map(function (task) {
+        switch (task.priority){
+            case "Low": task.color = "green"; break;
+            case "Medium": task.color = "yellow"; break;
+            case "High": task.color = "red"; break;
+            default: return 0;
+        }
         const tasks = newItemTemplate.cloneNode(true);
-    
+        tasks.style.backgroundColor = task.color;
         const taskDescription = tasks.querySelector("h5");
         taskDescription.textContent = task.title;
-    
         const taskPriority = tasks.querySelector(".priority");
         taskPriority.textContent = `${task.priority} priority`;
-    
         const taskDate = tasks.querySelector(".date");
         taskDate.textContent = task.date;
-    
         const tasksText = tasks.querySelector("p");
         tasksText.textContent = task.text;
-        
         ListCollection.append(tasks);
-        
+
+        const deleteBtn = tasks.querySelector(".btn-danger");
+        const successBtn = tasks.querySelector(".btn-success");
+        const editBtn = tasks.querySelector(".btn-info");
+        if(nameList === COMPLETED) {
+            editBtn.disabled = "disabled";
+            successBtn.style.display = "none";
+        }
+
+        deleteBtn.addEventListener("click", function () {
+            deleteTask(task.id, TodoList, ListCollection, nameList);
+        })
+        successBtn.addEventListener("click", function () {
+            completeTask(task.id, task, TodoList, ListCollection, nameList);
+        })
+        editBtn.addEventListener("click", function (){
+            editTask(task.id, task, TodoList, ListCollection, nameList)
+        })
     })
-    //addCount(ListName, ListCollection.children);
+    if(nameList === TODO){
+        let countCurrentTasks = currentTasks.getElementsByTagName("li");
+        nameTodo.querySelector("span").textContent = ` (${countCurrentTasks.length})`
+    } else {
+        let countCompletedTasks = completedTasks.getElementsByTagName("li");
+        nameCompleted.querySelector("span").textContent = ` (${countCompletedTasks.length})`
+    }
 }
 
-renderTask(TodoList.ToDo, currentTasks);
-renderTask(TodoList.Comleted, completedTasks);
+renderTask(getStorageToDo || TodoList, currentTasks, TODO);
+renderTask(getStorageCompleted || TodoList, completedTasks, COMPLETED);
 
-function sortList(state, List, direction){
+function sortList(state, List, direction, nameList) {
     let sortDown;
-    switch(direction){
+    switch (direction) {
         case DOWN:
-            sortDown = state.sort((a, b) => b.date - a.date);
+            sortDown = state[nameList].sort((a, b) => Date.parse(b.dates) - Date.parse(a.dates));
             break;
         case UP:
-            sortDown = state.sort((a, b) => a.date - b.date);
+            sortDown = state[nameList].sort((a, b) => Date.parse(a.dates) - Date.parse(b.dates));
             break;
-        default: 
+        default:
             return 0;
     }
     List.innerHTML = "";
-    renderTask(sortDown, List);
-    console.log("sort");
+    TodoList = getLocalStorage();
+    TodoList[nameList] = sortDown;
+    setLocalStorage("TodoList", TodoList);
+    renderTask(getLocalStorage(), List, nameList);
 }
 
-const DOWN = "SORT_DOWN";
-const UP = "SORT_UP"
-
-numberDown.addEventListener("click", () => sortList(TodoList.Comleted, completedTasks, DOWN));
-numberUp.addEventListener("click", () => sortList(TodoList.Comleted, completedTasks, UP));
-numberDown.addEventListener("click", () => sortList(TodoList.ToDo, currentTasks, DOWN));
-numberUp.addEventListener("click", () => sortList(TodoList.ToDo, currentTasks, UP));
-
-
+numberDown.addEventListener("click", () => sortList(getLocalStorage() || TodoList, currentTasks, DOWN, TODO));
+numberUp.addEventListener("click", () => sortList(getLocalStorage() || TodoList, currentTasks, UP, TODO));
+numberDown.addEventListener("click", () => sortList(getLocalStorage() || TodoList, completedTasks, DOWN, COMPLETED));
+numberUp.addEventListener("click", () => sortList(getLocalStorage() || TodoList, completedTasks, UP, COMPLETED));
 
 function addTask(title, text, priority, date) {
-    const tasks = newItemTemplate.cloneNode(true);
-    
-    const task = {title, text, priority, date, comleted: false}
+    const task = {
+        id: +date,
+        title, text, priority,
+        date: createTime(date),
+        dates: date, color : null
+    }
 
-    TodoList.ToDo = [...TodoList.ToDo, task];
-    TodoList.ToDo.map(function(task){
+    if (localStorage.getItem("TodoList") === null) {
+        setLocalStorage("TodoList", TodoList);
+        TodoList = getLocalStorage();
+        TodoList.ToDo = [...TodoList.ToDo, task];
+        setLocalStorage("TodoList", TodoList);
+    } else {
+        TodoList = getLocalStorage();
+        TodoList.ToDo = [...TodoList.ToDo, task];
+        setLocalStorage("TodoList", TodoList);
+    }
 
-        const taskDescription = tasks.querySelector("h5");
-        taskDescription.textContent = task.title;
+    renderTask(getLocalStorage(), currentTasks, TODO);
 
-        const taskPriority = tasks.querySelector(".priority");
-        taskPriority.textContent = `${task.priority} priority`;
-
-        const taskDate = tasks.querySelector(".date");
-        taskDate.textContent = createTime(date);
-
-        const tasksText = tasks.querySelector("p");
-        tasksText.textContent = task.text;
-        currentTasks.appendChild(tasks);
-    });
-
-    
-    titleTask.value = "";
-    textTask.value = "";
-    setLocalStorage(TodoList);
 }
 
 newItemForm.addEventListener("submit", function (e) {
     e.preventDefault();
-
     let priority = "";
-    const date = new Date();
 
-    for(let i = 0; i < inputRadio.length; i++){
-        inputRadio[i].checked ? priority = inputRadio[i].value : priority;
+    for(let input of inputRadio){
+        input.checked ? priority = input.value : priority;
     }
-    
-    addTask(titleTask.value, textTask.value, priority, date);
 
+    exampleModal.classList.remove("show");
+    exampleModal.style = null;
+    exampleModal.setAttribute("style", "none");
+    exampleModal.ariaModal = null;
+    exampleModal.ariaHidden = "true";
+    document.querySelector(".modal-backdrop").remove();
+    document.body.style = null;
+
+    addTask(titleTask.value, textTask.value, priority, new Date());
+
+    document.getElementById("add-form").reset();
 })
+
+const closeBtn = document.querySelector(".close");
+const secondaryBtn = document.querySelector(".btn-secondary");
+
+function resetForm(button) {
+    button.addEventListener("click", function (){
+        document.getElementById("add-form").reset();
+    })
+}
+resetForm(closeBtn);
+resetForm(secondaryBtn);
