@@ -16,6 +16,7 @@ const taskTemplate = document.querySelector("#task-template").content;
 const newItemTemplate = taskTemplate.querySelector(".list-group-item");
 
 const exampleModal = document.querySelector(".modal");
+const listGroup = document.querySelectorAll(".list-group")
 
 const TODO = "ToDo";
 const COMPLETED = "Completed";
@@ -26,18 +27,12 @@ let TodoList = {ToDo: [], Completed: []}
 
 let countTasks = document.createElement("span");
 
-let addCount = function(List){
+let addCount = function (List) {
     const count = countTasks.cloneNode(true);
     List.append(count);
 }
 addCount(nameTodo);
 addCount(nameCompleted);
-
-function closeModal(modal){
-    modal.classList.remove("mod");
-    modal.style.display = "none";
-    modal.areaModal = "false";
-}
 
 const setLocalStorage = function (key, value) {
     localStorage.setItem(`${key}`, JSON.stringify(value));
@@ -51,7 +46,7 @@ const getLocalStorage = function () {
     return todolistLocalStorage
 }
 
-let getStorageToDo = getLocalStorage() ? getLocalStorage(): null;
+let getStorageToDo = getLocalStorage() ? getLocalStorage() : null;
 let getStorageCompleted = getLocalStorage() ? getLocalStorage() : null
 
 function createTime(date) {
@@ -81,20 +76,23 @@ let completeTask = function (id, task, todoList, ListCollection, nameList) {
     renderTask(getLocalStorage(), completedTasks, COMPLETED);
 }
 
-let editTask = function (id, task, TodoList, ListCollection, nameList){
+function closeModal(modal) {
+    modal.remove();
+}
 
-    const modalContent = exampleModal.querySelector(".modal-content");
-    const modal = modalContent.cloneNode(true);
-    modal.classList.remove("modal-content");
-    modal.classList.add("mod");
+let editTask = function (id, task, TodoList, ListCollection, nameList) {
+
+    const modal = exampleModal.cloneNode(true);
+    modal.classList.add("show");
+    modal.style.display = "block";
     const editTaskBtn = modal.querySelector("button[type=submit]");
     const inputTitle = modal.querySelector("#inputTitle");
     const inputText = modal.querySelector("#inputText");
     const fieldset = modal.querySelector("fieldset");
     const inputRadio = fieldset.querySelectorAll("input");
 
-    for(let input of inputRadio){
-        input.value === task.priority ?  input.checked = true : input.checked = false;
+    for (let input of inputRadio) {
+        input.value === task.priority ? input.checked = true : input.checked = false;
     }
 
     inputTitle.value = task.title;
@@ -107,16 +105,16 @@ let editTask = function (id, task, TodoList, ListCollection, nameList){
     closeBtn.addEventListener("click", () => closeModal(modal));
     secondaryBtn.addEventListener("click", () => closeModal(modal));
 
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.code === 'Escape') {
             closeModal(modal);
         }
     });
 
-    editTaskBtn.addEventListener("click", function (e){
+    editTaskBtn.addEventListener("click", function (e) {
         e.preventDefault();
         let priority = 0;
-        for(let input of inputRadio){
+        for (let input of inputRadio) {
             input.checked ? priority = input.value : priority;
         }
 
@@ -127,7 +125,7 @@ let editTask = function (id, task, TodoList, ListCollection, nameList){
         const tasks = {
             ...getLocalStorage(),
             [nameList]: TodoList[nameList].map(t => {
-                if(t.id === id){
+                if (t.id === id) {
                     return {...t, ...task}
                 } else return t
             })
@@ -141,53 +139,168 @@ let editTask = function (id, task, TodoList, ListCollection, nameList){
 function renderTask(TodoList, ListCollection, nameList) {
     ListCollection.innerHTML = "";
     TodoList[nameList].map(function (task) {
-        switch (task.priority){
-            case "Low": task.color = "green"; break;
-            case "Medium": task.color = "yellow"; break;
-            case "High": task.color = "red"; break;
-            default: return 0;
-        }
-        const tasks = newItemTemplate.cloneNode(true);
-        tasks.style.backgroundColor = task.color;
-        const taskDescription = tasks.querySelector("h5");
-        taskDescription.textContent = task.title;
-        const taskPriority = tasks.querySelector(".priority");
-        taskPriority.textContent = `${task.priority} priority`;
-        const taskDate = tasks.querySelector(".date");
-        taskDate.textContent = task.date;
-        const tasksText = tasks.querySelector("p");
-        tasksText.textContent = task.text;
-        ListCollection.append(tasks);
+            switch (task.priority) {
+                case "Low":
+                    task.color = "green";
+                    break;
+                case "Medium":
+                    task.color = "yellow";
+                    break;
+                case "High":
+                    task.color = "red";
+                    break;
+                default:
+                    return 0;
+            }
+            const tasks = newItemTemplate.cloneNode(true);
+            tasks.style.backgroundColor = task.color;
+            const taskDescription = tasks.querySelector("h5");
+            taskDescription.textContent = task.title;
+            const taskPriority = tasks.querySelector(".priority");
+            taskPriority.textContent = `${task.priority} priority`;
+            const taskDate = tasks.querySelector(".date");
+            taskDate.textContent = task.date;
+            const tasksText = tasks.querySelector("p");
+            tasksText.textContent = task.text;
+            ListCollection.append(tasks);
 
-        const deleteBtn = tasks.querySelector(".btn-danger");
-        const successBtn = tasks.querySelector(".btn-success");
-        const editBtn = tasks.querySelector(".btn-info");
-        if(nameList === COMPLETED) {
-            editBtn.disabled = "disabled";
-            successBtn.style.display = "none";
-        }
+            const deleteBtn = tasks.querySelector(".btn-danger");
+            const successBtn = tasks.querySelector(".btn-success");
+            const editBtn = tasks.querySelector(".btn-info");
+            if (nameList === COMPLETED) {
+                editBtn.disabled = "disabled";
+                successBtn.style.display = "none";
+            }
 
-        deleteBtn.addEventListener("click", function () {
-            deleteTask(task.id, TodoList, ListCollection, nameList);
-        })
-        successBtn.addEventListener("click", function () {
-            completeTask(task.id, task, TodoList, ListCollection, nameList);
-        })
-        editBtn.addEventListener("click", function (){
-            editTask(task.id, task, TodoList, ListCollection, nameList)
-        })
-    })
-    if(nameList === TODO){
+            deleteBtn.addEventListener("click", function () {
+                deleteTask(task.id, TodoList, ListCollection, nameList);
+            })
+            successBtn.addEventListener("click", function () {
+                completeTask(task.id, task, TodoList, ListCollection, nameList);
+            })
+            editBtn.addEventListener("click", function () {
+                editTask(task.id, task, TodoList, ListCollection, nameList)
+            })
+
+            const dragAndDrop = () => {
+                tasks.addEventListener("dragstart", function (evt){
+                    evt.target.classList.add("fade")
+                    console.log("dragstart")
+
+                })
+                tasks.addEventListener("dragend", function (evt){
+                    console.log("dragend")
+                    evt.target.classList.remove("fade")
+                })
+                setTask(tasks)
+            }
+            dragAndDrop()
+
+            /*tasks.onmousedown = function (evt) {
+                let shiftX = evt.clientX - tasks.getBoundingClientRect().left;
+                let shiftY = evt.clientY - tasks.getBoundingClientRect().top;
+                tasks.style.width = "80%"
+                tasks.style.cursor = "pointer"
+                tasks.classList.remove("w-100")
+
+                tasks.style.position = 'absolute';
+                tasks.style.zIndex = "1000";
+                document.body.append(tasks);
+                moveAt(evt.pageX, evt.pageY);
+
+                function moveAt(pageX, pageY) {
+                    tasks.style.left = pageX - shiftX + 'px';
+                    tasks.style.top = pageY - shiftY + 'px';
+                }
+
+                let currentDroppable = null;
+
+                function onMouseMove(event) {
+                    moveAt(event.pageX, event.pageY);
+
+                    tasks.hidden = true;
+                    let elemBelow = document.elementFromPoint(event.clientX, event.clientY);
+                    tasks.hidden = false;
+
+                    if (!elemBelow) return;
+
+                    let droppableBelow = elemBelow.closest('.droppable');
+                    console.log(droppableBelow)
+                    if (currentDroppable !== droppableBelow) {
+                        if (currentDroppable) {
+                            // логика обработки процесса "вылета" из droppable (удаляем подсветку)
+                            leaveDroppable(currentDroppable);
+                        }
+                        currentDroppable = droppableBelow;
+                        if (currentDroppable) {
+                            // логика обработки процесса, когда мы "влетаем" в элемент droppable
+                            enterDroppable(currentDroppable);
+                        }
+                    }
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+
+                tasks.onmouseup = function () {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    tasks.onmouseup = null;
+                };
+            }
+
+            function enterDroppable(elem) {
+                elem.style.background = 'pink';
+                console.log("ddd")
+            }
+
+            function leaveDroppable(elem) {
+                elem.style.background = '';
+            }
+
+            tasks.ondragstart = function () {
+                return false;
+            };*/
+        }
+    )
+    if (nameList === TODO) {
         let countCurrentTasks = currentTasks.getElementsByTagName("li");
         nameTodo.querySelector("span").textContent = ` (${countCurrentTasks.length})`
     } else {
         let countCompletedTasks = completedTasks.getElementsByTagName("li");
         nameCompleted.querySelector("span").textContent = ` (${countCompletedTasks.length})`
     }
+    console.log(listGroup)
 }
 
 renderTask(getStorageToDo || TodoList, currentTasks, TODO);
 renderTask(getStorageCompleted || TodoList, completedTasks, COMPLETED);
+
+listGroup.forEach(list => {
+    list.addEventListener("dragover",dragOver)
+    list.addEventListener("dragenter", dragEnter)
+    list.addEventListener("dragleave", dragLeave)
+    list.addEventListener("drop", dragDrop)
+})
+
+function dragOver(evt) {
+    evt.preventDefault()
+}
+function dragEnter(evt) {
+    evt.preventDefault()
+    this.classList.add("hovered")
+}
+function dragLeave(evt) {
+    console.log("Leave")
+    evt.preventDefault()
+    this.classList.remove("hovered")
+}
+function setTask(tasks){
+    console.log(tasks)
+}
+function dragDrop(tasks) {
+    this.classList.remove("hovered")
+    this.append(tasks)
+    console.log("drop")
+}
 
 function sortList(state, List, direction, nameList) {
     let sortDown;
@@ -218,7 +331,7 @@ function addTask(title, text, priority, date) {
         id: +date,
         title, text, priority,
         date: createTime(date),
-        dates: date, color : null
+        dates: date, color: null
     }
 
     if (localStorage.getItem("TodoList") === null) {
@@ -237,33 +350,54 @@ function addTask(title, text, priority, date) {
 }
 
 newItemForm.addEventListener("submit", function (e) {
+    console.log("click")
     e.preventDefault();
     let priority = "";
 
-    for(let input of inputRadio){
+    for (let input of inputRadio) {
         input.checked ? priority = input.value : priority;
     }
 
-    exampleModal.classList.remove("show");
-    exampleModal.style = null;
-    exampleModal.setAttribute("style", "none");
-    exampleModal.ariaModal = null;
-    exampleModal.ariaHidden = "true";
-    document.querySelector(".modal-backdrop").remove();
-    document.body.style = null;
-
     addTask(titleTask.value, textTask.value, priority, new Date());
-
-    document.getElementById("add-form").reset();
+    closeAddForm();
 })
 
 const closeBtn = document.querySelector(".close");
-const secondaryBtn = document.querySelector(".btn-secondary");
+const secondaryBtn = document.getElementById("exit");
 
 function resetForm(button) {
-    button.addEventListener("click", function (){
-        document.getElementById("add-form").reset();
+    button.addEventListener("click", function () {
+        closeAddForm()
     })
 }
+
 resetForm(closeBtn);
 resetForm(secondaryBtn);
+
+const openModal = document.getElementById("openModal");
+
+openModal.addEventListener("click", function () {
+    exampleModal.classList.add("show");
+    exampleModal.style.display = "block";
+    exampleModal.ariaModal = "true";
+    exampleModal.ariaHidden = null;
+    document.body.classList.add("modal-open");
+    let backdrop = document.createElement("div");
+    backdrop.classList.add("modal-backdrop");
+    backdrop.classList.add("fade");
+    backdrop.classList.add("show");
+    document.body.append(backdrop);
+
+})
+
+function closeAddForm() {
+    document.getElementById("add-form").reset();
+    exampleModal.classList.remove("show");
+    exampleModal.style.display = "none";
+    exampleModal.style.paddingRight = null;
+    exampleModal.ariaModal = null;
+    exampleModal.ariaHidden = "true";
+    document.body.classList.remove("modal-open");
+    document.querySelector(".modal-backdrop").remove();
+    document.body.style = null;
+}

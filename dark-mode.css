@@ -35,18 +35,9 @@
   color:  #fff !important;
 }
 
-.mod {
-    position: absolute;
-    display: block;
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    background: white;
-    min-width: 500px;
-    top: 10%;
-    left: 0;
-    margin-left: 20%;
+.hide{
+    display: none !important;
 }
-
-[data-theme="dark"] .mod {
-    background-color: #333 !important;
+.hovered{
+    background-color: #ccc;
 }
