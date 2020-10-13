@@ -17,6 +17,7 @@ const newItemTemplate = taskTemplate.querySelector(".list-group-item");
 
 const exampleModal = document.querySelector(".modal");
 const listGroup = document.querySelectorAll(".list-group")
+const logOut = document.getElementById("log-out");
 
 const TODO = "ToDo";
 const COMPLETED = "Completed";
@@ -38,13 +39,14 @@ const setLocalStorage = function (key, value) {
     localStorage.setItem(`${key}`, JSON.stringify(value));
 }
 
-const getLocalStorage = function () {
-    let todolistLocalStorage = localStorage.getItem("TodoList")
-    if (todolistLocalStorage) {
-        return JSON.parse(todolistLocalStorage);
-    }
-    return todolistLocalStorage
-}
+const getUsers = () => JSON.parse(localStorage.getItem("Users"));
+const Login = () => JSON.parse(localStorage.getItem("Login"));
+
+const getUser = () => getUsers().find(user => user.email === Login().email);
+
+
+const getLocalStorage = () => getUser().TodoList;
+
 
 let getStorageToDo = getLocalStorage() ? getLocalStorage() : null;
 let getStorageCompleted = getLocalStorage() ? getLocalStorage() : null
@@ -64,14 +66,18 @@ let deleteTask = function (id, TodoList, ListCollection, nameList) {
         ...getLocalStorage(),
         [nameList]: TodoList[nameList].filter(task => task.id !== id)
     };
-    setLocalStorage("TodoList", tasks);
+    const findUser = getUsers();
+    findUser.find(user => user.email === Login().email).TodoList = tasks;
+    setLocalStorage("Users", findUser);
     renderTask(getLocalStorage(), ListCollection, nameList);
 }
 
 let completeTask = function (id, task, todoList, ListCollection, nameList) {
     TodoList = getLocalStorage();
     TodoList.Completed = [...TodoList.Completed, task];
-    setLocalStorage("TodoList", TodoList);
+    const findUser = getUsers();
+    findUser.find(user => user.email === Login().email).TodoList = TodoList;
+    setLocalStorage("Users", findUser);
     deleteTask(id, todoList, ListCollection, nameList);
     renderTask(getLocalStorage(), completedTasks, COMPLETED);
 }
@@ -130,7 +136,9 @@ let editTask = function (id, task, TodoList, ListCollection, nameList) {
                 } else return t
             })
         }
-        setLocalStorage("TodoList", tasks);
+        const findUser = getUsers();
+        findUser.find(user => user.email === Login().email).TodoList = tasks;
+        setLocalStorage("Users", findUser);
         renderTask(getLocalStorage(), ListCollection, nameList);
         closeModal(modal);
     })
@@ -317,7 +325,9 @@ function sortList(state, List, direction, nameList) {
     List.innerHTML = "";
     TodoList = getLocalStorage();
     TodoList[nameList] = sortDown;
-    setLocalStorage("TodoList", TodoList);
+    const findUser = getUsers();
+    findUser.find(user => user.email === Login().email).TodoList = TodoList;
+    setLocalStorage("Users", findUser);
     renderTask(getLocalStorage(), List, nameList);
 }
 
@@ -333,17 +343,12 @@ function addTask(title, text, priority, date) {
         date: createTime(date),
         dates: date, color: null
     }
-
-    if (localStorage.getItem("TodoList") === null) {
-        setLocalStorage("TodoList", TodoList);
         TodoList = getLocalStorage();
         TodoList.ToDo = [...TodoList.ToDo, task];
-        setLocalStorage("TodoList", TodoList);
-    } else {
-        TodoList = getLocalStorage();
-        TodoList.ToDo = [...TodoList.ToDo, task];
-        setLocalStorage("TodoList", TodoList);
-    }
+        const findUser = JSON.parse(localStorage.getItem("Users"));
+        findUser.find(user => user.email === Login().email).TodoList = TodoList;
+        const users = [...findUser]
+        setLocalStorage("Users", users);
 
     renderTask(getLocalStorage(), currentTasks, TODO);
 
@@ -401,3 +406,8 @@ function closeAddForm() {
     document.querySelector(".modal-backdrop").remove();
     document.body.style = null;
 }
+
+logOut.addEventListener("click", function (){
+    localStorage.removeItem("Login");
+    document.location.href ="index.html"
+})
