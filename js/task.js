@@ -1,20 +1,16 @@
 const newItemForm = document.getElementById("add-form");
 const titleTask = document.getElementById("inputTitle");
 const textTask = document.getElementById("inputText");
-
 const numberUp = document.getElementById("number-up");
 const numberDown = document.getElementById("number-down");
-
 const nameTodo = document.querySelector(".todo");
 const nameCompleted = document.querySelector(".completed");
 const currentTasks = document.getElementById("currentTasks");
 const completedTasks = document.getElementById("completedTasks");
 const fieldset = document.querySelector("fieldset");
 const inputRadio = fieldset.querySelectorAll("input");
-
 const taskTemplate = document.querySelector("#task-template").content;
 const newItemTemplate = taskTemplate.querySelector(".list-group-item");
-
 const exampleModal = document.querySelector(".modal");
 const listGroup = document.querySelectorAll(".list-group")
 const logOut = document.getElementById("log-out");
@@ -24,12 +20,8 @@ const COMPLETED = "Completed";
 const DOWN = "SORT_DOWN";
 const UP = "SORT_UP";
 
-let TodoList = {ToDo: [], Completed: []}
-
-let countTasks = document.createElement("span");
-
 let addCount = function (List) {
-    const count = countTasks.cloneNode(true);
+    const count = document.createElement("span");
     List.append(count);
 }
 addCount(nameTodo);
@@ -41,24 +33,24 @@ const setLocalStorage = function (key, value) {
 
 const getUsers = () => JSON.parse(localStorage.getItem("Users"));
 const Login = () => JSON.parse(localStorage.getItem("Login"));
-
 const getUser = () => getUsers().find(user => user.email === Login().email);
-
-
 const getLocalStorage = () => getUser().TodoList;
 
-
-let getStorageToDo = getLocalStorage() ? getLocalStorage() : null;
-let getStorageCompleted = getLocalStorage() ? getLocalStorage() : null
+let getTodolist = getLocalStorage() ? getLocalStorage() : null;
 
 function createTime(date) {
     function times(time) {
         return time < 10 ? `0${time}` : time;
     }
-
     let time = `${times(date.getHours())}:${times(date.getMinutes())}:${times(date.getSeconds())}`;
     let dates = `${times(date.getDate())}.${times(date.getMonth() + 1)}.${date.getFullYear()}`;
     return `${time} ${dates}`
+}
+
+function setTodo(tasks) {
+    const findUser = getUsers();
+    findUser.find(user => user.email === Login().email).TodoList = tasks;
+    setLocalStorage("Users", findUser);
 }
 
 let deleteTask = function (id, TodoList, ListCollection, nameList) {
@@ -66,28 +58,19 @@ let deleteTask = function (id, TodoList, ListCollection, nameList) {
         ...getLocalStorage(),
         [nameList]: TodoList[nameList].filter(task => task.id !== id)
     };
-    const findUser = getUsers();
-    findUser.find(user => user.email === Login().email).TodoList = tasks;
-    setLocalStorage("Users", findUser);
+    setTodo(tasks);
     renderTask(getLocalStorage(), ListCollection, nameList);
 }
 
 let completeTask = function (id, task, todoList, ListCollection, nameList) {
-    TodoList = getLocalStorage();
+    let TodoList = getLocalStorage();
     TodoList.Completed = [...TodoList.Completed, task];
-    const findUser = getUsers();
-    findUser.find(user => user.email === Login().email).TodoList = TodoList;
-    setLocalStorage("Users", findUser);
+    setTodo(TodoList);
     deleteTask(id, todoList, ListCollection, nameList);
     renderTask(getLocalStorage(), completedTasks, COMPLETED);
 }
 
-function closeModal(modal) {
-    modal.remove();
-}
-
 let editTask = function (id, task, TodoList, ListCollection, nameList) {
-
     const modal = exampleModal.cloneNode(true);
     modal.classList.add("show");
     modal.style.display = "block";
@@ -136,12 +119,13 @@ let editTask = function (id, task, TodoList, ListCollection, nameList) {
                 } else return t
             })
         }
-        const findUser = getUsers();
-        findUser.find(user => user.email === Login().email).TodoList = tasks;
-        setLocalStorage("Users", findUser);
+        setTodo(tasks);
         renderTask(getLocalStorage(), ListCollection, nameList);
         closeModal(modal);
     })
+    function closeModal(modal) {
+        modal.remove();
+    }
 }
 
 function renderTask(TodoList, ListCollection, nameList) {
@@ -190,20 +174,18 @@ function renderTask(TodoList, ListCollection, nameList) {
                 editTask(task.id, task, TodoList, ListCollection, nameList)
             })
 
-            const dragAndDrop = () => {
+            /*const dragAndDrop = () => {
                 tasks.addEventListener("dragstart", function (evt){
-                    evt.target.classList.add("fade")
-                    console.log("dragstart")
+                    evt.target.classList.add("fade");
+                    console.log("dragstart");
 
                 })
                 tasks.addEventListener("dragend", function (evt){
-                    console.log("dragend")
-                    evt.target.classList.remove("fade")
+                    console.log("dragend");
+                    evt.target.classList.remove("fade");
                 })
-                setTask(tasks)
             }
-            dragAndDrop()
-
+            dragAndDrop();*/
             /*tasks.onmousedown = function (evt) {
                 let shiftX = evt.clientX - tasks.getBoundingClientRect().left;
                 let shiftY = evt.clientY - tasks.getBoundingClientRect().top;
@@ -271,44 +253,43 @@ function renderTask(TodoList, ListCollection, nameList) {
     )
     if (nameList === TODO) {
         let countCurrentTasks = currentTasks.getElementsByTagName("li");
-        nameTodo.querySelector("span").textContent = ` (${countCurrentTasks.length})`
+        nameTodo.querySelector("span").textContent = ` (${countCurrentTasks.length})`;
     } else {
         let countCompletedTasks = completedTasks.getElementsByTagName("li");
-        nameCompleted.querySelector("span").textContent = ` (${countCompletedTasks.length})`
+        nameCompleted.querySelector("span").textContent = ` (${countCompletedTasks.length})`;
     }
-    console.log(listGroup)
 }
 
-renderTask(getStorageToDo || TodoList, currentTasks, TODO);
-renderTask(getStorageCompleted || TodoList, completedTasks, COMPLETED);
+renderTask(getTodolist, currentTasks, TODO);
+renderTask(getTodolist, completedTasks, COMPLETED);
 
-listGroup.forEach(list => {
-    list.addEventListener("dragover",dragOver)
-    list.addEventListener("dragenter", dragEnter)
-    list.addEventListener("dragleave", dragLeave)
-    list.addEventListener("drop", dragDrop)
+/*listGroup.forEach(list => {
+    list.addEventListener("dragover",dragOver);
+    list.addEventListener("dragenter", dragEnter);
+    list.addEventListener("dragleave", dragLeave);
+    list.addEventListener("drop", dragDrop);
 })
 
 function dragOver(evt) {
-    evt.preventDefault()
+    evt.preventDefault();
 }
 function dragEnter(evt) {
-    evt.preventDefault()
-    this.classList.add("hovered")
+    evt.preventDefault();
+    this.classList.add("hovered");
 }
 function dragLeave(evt) {
     console.log("Leave")
-    evt.preventDefault()
-    this.classList.remove("hovered")
+    evt.preventDefault();
+    this.classList.remove("hovered");
 }
 function setTask(tasks){
-    console.log(tasks)
+    console.log(tasks);
 }
 function dragDrop(tasks) {
-    this.classList.remove("hovered")
-    this.append(tasks)
+    this.classList.remove("hovered");
+    this.append(tasks);
     console.log("drop")
-}
+}*/
 
 function sortList(state, List, direction, nameList) {
     let sortDown;
@@ -323,18 +304,16 @@ function sortList(state, List, direction, nameList) {
             return 0;
     }
     List.innerHTML = "";
-    TodoList = getLocalStorage();
+    let TodoList = getLocalStorage();
     TodoList[nameList] = sortDown;
-    const findUser = getUsers();
-    findUser.find(user => user.email === Login().email).TodoList = TodoList;
-    setLocalStorage("Users", findUser);
+    setTodo(TodoList);
     renderTask(getLocalStorage(), List, nameList);
 }
 
-numberDown.addEventListener("click", () => sortList(getLocalStorage() || TodoList, currentTasks, DOWN, TODO));
-numberUp.addEventListener("click", () => sortList(getLocalStorage() || TodoList, currentTasks, UP, TODO));
-numberDown.addEventListener("click", () => sortList(getLocalStorage() || TodoList, completedTasks, DOWN, COMPLETED));
-numberUp.addEventListener("click", () => sortList(getLocalStorage() || TodoList, completedTasks, UP, COMPLETED));
+numberDown.addEventListener("click", () => sortList(getLocalStorage(), currentTasks, DOWN, TODO));
+numberUp.addEventListener("click", () => sortList(getLocalStorage(), currentTasks, UP, TODO));
+numberDown.addEventListener("click", () => sortList(getLocalStorage(), completedTasks, DOWN, COMPLETED));
+numberUp.addEventListener("click", () => sortList(getLocalStorage(), completedTasks, UP, COMPLETED));
 
 function addTask(title, text, priority, date) {
     const task = {
@@ -343,7 +322,7 @@ function addTask(title, text, priority, date) {
         date: createTime(date),
         dates: date, color: null
     }
-        TodoList = getLocalStorage();
+        let TodoList = getLocalStorage();
         TodoList.ToDo = [...TodoList.ToDo, task];
         const findUser = JSON.parse(localStorage.getItem("Users"));
         findUser.find(user => user.email === Login().email).TodoList = TodoList;
@@ -351,11 +330,9 @@ function addTask(title, text, priority, date) {
         setLocalStorage("Users", users);
 
     renderTask(getLocalStorage(), currentTasks, TODO);
-
 }
 
 newItemForm.addEventListener("submit", function (e) {
-    console.log("click")
     e.preventDefault();
     let priority = "";
 
@@ -370,11 +347,7 @@ newItemForm.addEventListener("submit", function (e) {
 const closeBtn = document.querySelector(".close");
 const secondaryBtn = document.getElementById("exit");
 
-function resetForm(button) {
-    button.addEventListener("click", function () {
-        closeAddForm()
-    })
-}
+let resetForm = (button) => button.addEventListener("click", () => closeAddForm());
 
 resetForm(closeBtn);
 resetForm(secondaryBtn);
@@ -409,5 +382,5 @@ function closeAddForm() {
 
 logOut.addEventListener("click", function (){
     localStorage.removeItem("Login");
-    document.location.href ="index.html"
+    document.location.href ="index.html";
 })
